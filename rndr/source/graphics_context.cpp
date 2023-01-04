@@ -1,7 +1,6 @@
 #include "muchcool/rndr/graphics_context.hpp"
 
-#include <vector>
-#include <array>
+
 
 namespace muchcool::rndr {
 
@@ -29,8 +28,8 @@ namespace muchcool::rndr {
     return physical_devices;
   }
 
-  static const VkInstance instance_ = create_instance();
-  static const std::vector<VkPhysicalDevice> physical_devices_ = get_physical_devices(instance_);
+  const VkInstance GraphicsContext::instance_ = create_instance();
+  const std::vector<VkPhysicalDevice> GraphicsContext::physical_devices_ = get_physical_devices(instance_);
 
 
   auto select_physical_device() -> VkPhysicalDevice {
@@ -48,13 +47,13 @@ namespace muchcool::rndr {
 
 
 
-  auto create_device(const VkPhysicalDevice physical_device) -> VkDevice {
+  auto create_device(const VkPhysicalDevice physical_device, uint32_t graphics_queue) -> VkDevice {
     float queue_priority = 1.0f;
 
     auto queue_create_infos = std::array<VkDeviceQueueCreateInfo, 1>{
       VkDeviceQueueCreateInfo{
         .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-        .queueFamilyIndex = select_best_graphics_queue(physical_device),
+        .queueFamilyIndex = graphics_queue,
         .queueCount = 1,
         .pQueuePriorities = &queue_priority
       }
@@ -72,15 +71,25 @@ namespace muchcool::rndr {
     return device;
   }
 
+  auto get_queue(VkDevice device, uint32_t queue_family) -> VkQueue {
+    auto queue = VkQueue{};
+    vkGetDeviceQueue(device, queue_family, 0, &queue);
+    return queue;
+  }
 
 
   GraphicsContext::GraphicsContext() : 
     physical_device_{ select_physical_device() },
-    device_{ create_device(physical_device_)} {
+    graphics_queue_index_ { select_best_graphics_queue(physical_device_) },
+    device_{ create_device(physical_device_, graphics_queue_index_) },
+    graphics_queue_ { get_queue(device_, graphics_queue_index_) }
+  {
   }
 
   GraphicsContext::~GraphicsContext() {
-  
+    vkDestroyDevice(device_, nullptr);
   }
+
+
 
 }

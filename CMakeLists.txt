@@ -3,6 +3,9 @@
 project ("MuchCoolProductions")
 
 
+add_subdirectory("external")
+
+
 set (CMAKE_C_STANDARD 17)
 set (CMAKE_CXX_STANDARD 20)
 
